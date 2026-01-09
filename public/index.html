@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <title>Lace's Simple CDLC Request Bot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">🎸</span>
+        <span class="logo-text">Lace's CDLC Bot</span>
+      </div>
+      
+      <ul class="nav-links">
+        <li class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-tab="queue">
+          <span class="nav-icon">📋</span>
+          <span>Queue</span>
+        </li>
+        <li class="nav-item" data-tab="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </li>
+        <li class="nav-item" data-tab="help">
+          <span class="nav-icon">❓</span>
+          <span>Help</span>
+        </li>
+      </ul>
+      
+      <div class="bot-status">
+        <div class="status-indicator offline" id="statusIndicator"></div>
+        <span id="statusText">Offline</span>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Dashboard Tab -->
+      <section class="tab-content active" id="dashboard">
+        <header class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Control your Rocksmith request bot</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary btn-small" id="themeToggleBtn" type="button">🌙 Dark Mode</button>
+          </div>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Bot Control Card -->
+          <div class="card bot-control">
+            <h2>Bot Control</h2>
+            <div class="control-buttons">
+              <button class="btn btn-primary btn-large" id="startBtn">
+                <span class="btn-icon">▶️</span>
+                Start Bot
+              </button>
+              <button class="btn btn-danger btn-large" id="stopBtn" disabled>
+                <span class="btn-icon">⏹️</span>
+                Stop Bot
+              </button>
+            </div>
+            
+            <div class="connection-status" id="connectionStatus">
+              <div class="platform-status">
+                <span class="platform-icon twitch">📺</span>
+                <span>Twitch</span>
+                <span class="status-badge disconnected" id="twitchStatus">Not Connected</span>
+              </div>
+              <div class="platform-status">
+                <span class="platform-icon youtube">▶️</span>
+                <span>YouTube</span>
+                <span class="status-badge disconnected" id="youtubeStatus">Not Connected</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Queue Link Card -->
+          <div class="card queue-link">
+            <h2>Queue URLs</h2>
+            <p class="card-description">Share these links with your viewers!</p>
+            
+            <div class="url-group">
+              <label>Local URL</label>
+              <div class="url-input-group">
+                <input type="text" readonly id="localUrl" value="Not running">
+                <button class="btn btn-secondary" onclick="copyUrl('localUrl')">📋 Copy</button>
+              </div>
+            </div>
+            
+            <div class="url-group">
+              <label>Public URL (for viewers)</label>
+              <div class="url-input-group">
+                <input type="text" readonly id="publicUrl" value="Enable ngrok in settings">
+                <button class="btn btn-secondary" onclick="copyUrl('publicUrl')">📋 Copy</button>
+                <button class="btn btn-secondary" onclick="openUrl('publicUrl')">🔗 Open</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats Card -->
+          <div class="card quick-stats">
+            <h2>Queue Stats</h2>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value" id="queueLength">0</span>
+                <span class="stat-label">In Queue</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="nowPlayingCount">-</span>
+                <span class="stat-label">Now Playing</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Now Playing Card -->
+          <div class="card now-playing">
+            <h2>Now Playing</h2>
+            <div class="now-playing-content" id="nowPlayingContent">
+              <div class="no-song">No song playing</div>
+            </div>
+            <div class="playback-controls">
+              <button class="btn btn-secondary" id="nextBtn">⏭️ Next</button>
+              <button class="btn btn-secondary" id="playedBtn">✅ Played</button>
+              <button class="btn btn-danger" id="skipBtn">⏩ Skip</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Queue Tab -->
+      <section class="tab-content" id="queue">
+        <header class="page-header">
+          <h1>Request Queue</h1>
+          <div class="header-actions">
+            <button class="btn btn-danger" id="clearQueueBtn">🗑️ Clear All</button>
+          </div>
+        </header>
+
+        <div class="queue-container">
+          <div class="queue-list" id="queueList">
+            <div class="empty-queue">
+              <span class="empty-icon">🎵</span>
+              <p>No songs in queue</p>
+              <p class="empty-hint">Songs requested via !request will appear here</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Tab -->
+      <section class="tab-content" id="settings">
+        <header class="page-header">
+          <h1>Settings</h1>
+          <p>Configure your bot connections</p>
+        </header>
+
+        <div class="settings-container">
+          <!-- Twitch Settings -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon twitch-bg">📺</span>
+              <h2>Twitch Configuration</h2>
+            </div>
+            
+            <div class="form-group">
+              <label for="twitchUsername">Bot Username</label>
+              <input type="text" id="twitchUsername" placeholder="your_bot_account">
+            </div>
+            
+            <div class="form-group">
+              <label for="twitchChannel">Channel Name</label>
+              <input type="text" id="twitchChannel" placeholder="your_channel">
+            </div>
+            
+            <div class="form-group">
+              <label for="twitchOauth">OAuth Token</label>
+              <input type="password" id="twitchOauth" placeholder="oauth:xxxxxxxxxx">
+              <a href="#" class="help-link" onclick="window.electronAPI.openExternal('https://twitchapps.com/tmi/')">Get OAuth Token →</a>
+            </div>
+          </div>
+
+          <!-- YouTube Settings -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon youtube-bg">▶️</span>
+              <h2>YouTube Configuration</h2>
+            </div>
+            
+            <div class="form-group">
+              <label for="youtubeApiKey">API Key</label>
+              <input type="password" id="youtubeApiKey" placeholder="Your YouTube API Key">
+              <a href="#" class="help-link" onclick="window.electronAPI.openExternal('https://console.cloud.google.com/')">Get API Key →</a>
+            </div>
+            
+            <div class="form-group">
+              <label for="youtubeChatId">Live Chat ID (optional)</label>
+              <input type="text" id="youtubeChatId" placeholder="Auto-detected if OAuth is set up">
+            </div>
+          </div>
+
+          <!-- Customsforge Settings -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon">🎸</span>
+              <h2>Customsforge Login</h2>
+              <span id="cfStatus" class="connection-status disconnected" title="Not connected">●</span>
+            </div>
+            
+            <p class="card-description">Login to validate song requests against Customsforge database</p>
+            
+            <div class="form-group">
+              <label for="cfUsername">Customsforge Username/Email</label>
+              <input type="text" id="cfUsername" placeholder="Your Customsforge username or email">
+            </div>
+            
+            <div class="form-group">
+              <label for="cfPassword">Customsforge Password</label>
+              <input type="password" id="cfPassword" placeholder="Your Customsforge password">
+              <a href="#" class="help-link" onclick="window.electronAPI.openExternal('https://customsforge.com/register/')">Create account →</a>
+            </div>
+            
+            <div class="form-group">
+              <button type="button" id="testCfLogin" class="btn btn-secondary btn-small">Test Login</button>
+              <span id="cfLoginResult" class="login-result"></span>
+            </div>
+            
+            <p class="help-text">⚠️ Your credentials are stored securely on your computer and only used to search for CDLC. If no credentials are provided, the bot will accept all song requests without validation.</p>
+          </div>
+
+          <!-- Hosting Settings -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon hosting-bg">🌐</span>
+              <h2>Online Hosting (ngrok)</h2>
+            </div>
+            
+            <p class="card-description">Enable ngrok to share your queue publicly with viewers</p>
+            
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="ngrokEnabled">
+                <span class="checkbox-text">Enable public URL</span>
+              </label>
+            </div>
+            
+            <div class="form-group">
+              <label for="ngrokToken">Ngrok Auth Token</label>
+              <input type="password" id="ngrokToken" placeholder="Your ngrok auth token">
+              <a href="#" class="help-link" onclick="window.electronAPI.openExternal('https://dashboard.ngrok.com/get-started/your-authtoken')">Get free ngrok token →</a>
+            </div>
+          </div>
+
+          <!-- Bot Settings -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon bot-bg">🤖</span>
+              <h2>Bot Settings</h2>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="webPort">Web Server Port</label>
+                <input type="number" id="webPort" value="3000" min="1000" max="65535">
+              </div>
+              
+              <div class="form-group">
+                <label for="maxRequests">Max Requests Per User</label>
+                <input type="number" id="maxRequests" value="3" min="1" max="10">
+              </div>
+              
+              <div class="form-group">
+                <label for="cooldown">Cooldown (seconds)</label>
+                <input type="number" id="cooldown" value="10" min="0" max="300">
+              </div>
+            </div>
+          </div>
+
+          <!-- Hotkeys -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon bot-bg">⌨️</span>
+              <h2>Hotkeys</h2>
+            </div>
+
+            <p class="card-description">Click a box, then press the keys you want (e.g. Ctrl+N)</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hotkeyNext">Next Song</label>
+                <input type="text" id="hotkeyNext" class="hotkey-input" placeholder="Click then press keys" readonly>
+              </div>
+
+              <div class="form-group">
+                <label for="hotkeySkip">Skip Song</label>
+                <input type="text" id="hotkeySkip" class="hotkey-input" placeholder="Click then press keys" readonly>
+              </div>
+
+              <div class="form-group">
+                <label for="hotkeyPlayed">Mark Played</label>
+                <input type="text" id="hotkeyPlayed" class="hotkey-input" placeholder="Click then press keys" readonly>
+              </div>
+
+              <div class="form-group">
+                <label for="hotkeyClear">Clear Queue</label>
+                <input type="text" id="hotkeyClear" class="hotkey-input" placeholder="Click then press keys" readonly>
+              </div>
+            </div>
+
+            <p class="help-text">Tip: If a hotkey conflicts with something, choose a different combo.</p>
+          </div>
+
+          <div class="settings-actions">
+            <button class="btn btn-primary btn-large" id="saveSettingsBtn">💾 Save Settings</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Help Tab -->
+      <section class="tab-content" id="help">
+        <header class="page-header">
+          <h1>Help & Commands</h1>
+        </header>
+
+        <div class="help-container">
+          <div class="card">
+            <h2>🎮 User Commands</h2>
+            <table class="commands-table">
+              <tr>
+                <td><code>!request Artist - Song</code></td>
+                <td>Request a song from Customsforge</td>
+              </tr>
+              <tr>
+                <td><code>!sr Artist - Song</code></td>
+                <td>Shortcut for !request</td>
+              </tr>
+              <tr>
+                <td><code>!list</code></td>
+                <td>Get link to the queue page</td>
+              </tr>
+              <tr>
+                <td><code>!queue</code></td>
+                <td>Alias for !list</td>
+              </tr>
+              <tr>
+                <td><code>!song</code></td>
+                <td>See current/next song</td>
+              </tr>
+              <tr>
+                <td><code>!position</code></td>
+                <td>See your position in the queue</td>
+              </tr>
+              <tr>
+                <td><code>!myqueue</code></td>
+                <td>See your queue position</td>
+              </tr>
+              <tr>
+                <td><code>!remove</code></td>
+                <td>Remove your last request</td>
+              </tr>
+              <tr>
+                <td><code>!help</code></td>
+                <td>Show available commands</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <h2>🔧 Mod Commands</h2>
+            <table class="commands-table">
+              <tr>
+                <td><code>!next</code></td>
+                <td>Play next song in queue</td>
+              </tr>
+              <tr>
+                <td><code>!played</code></td>
+                <td>Mark current song as completed</td>
+              </tr>
+              <tr>
+                <td><code>!skip</code></td>
+                <td>Skip current song</td>
+              </tr>
+              <tr>
+                <td><code>!clear</code></td>
+                <td>Clear entire queue (broadcaster only)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <h2>⌨️ Keyboard Shortcuts</h2>
+            <table class="commands-table">
+              <tr>
+                <td><code>Ctrl+N</code></td>
+                <td>Next song (same as clicking Next button)</td>
+              </tr>
+              <tr>
+                <td><code>Ctrl+S</code></td>
+                <td>Skip current song</td>
+              </tr>
+              <tr>
+                <td><code>Ctrl+P</code></td>
+                <td>Mark current song as played</td>
+              </tr>
+              <tr>
+                <td><code>Ctrl+C</code></td>
+                <td>Clear entire queue (with confirmation)</td>
+              </tr>
+            </table>
+            <p class="help-text">💡 You can also drag-and-drop songs in the Queue tab to reorder them!</p>
+          </div>
+
+          <div class="card">
+            <h2>📝 Request Formats</h2>
+            <p>Users can request songs in these formats:</p>
+            <ul class="format-list">
+              <li><code>!request Green Day - American Idiot</code></li>
+              <li><code>!request American Idiot by Green Day</code></li>
+              <li><code>!request Green Day American Idiot</code></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
