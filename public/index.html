@@ -472,6 +472,92 @@
             <p class="help-text">Tip: If a hotkey conflicts with something, choose a different combo.</p>
           </div>
 
+          <!-- Response Templates -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <span class="platform-icon">💬</span>
+              <h2>Bot Response Messages</h2>
+            </div>
+            
+            <p class="card-description">Customize how the bot talks to chat. Use placeholders like {user}, {artist}, {title}, etc.</p>
+            
+            <div class="form-group">
+              <label for="templateRequestAdded">Request Added</label>
+              <input type="text" id="templateRequestAdded" placeholder="@{user} Added...">
+              <span class="help-text">Placeholders: {user}, {artist}, {title}, {position}, {queueLength}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateVipRequestAdded">VIP Request Added</label>
+              <input type="text" id="templateVipRequestAdded" placeholder="@{user} ⭐ VIP Request!...">
+              <span class="help-text">Placeholders: {user}, {artist}, {title}, {position}, {tokensRemaining}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateSongNotFound">Song Not Found</label>
+              <input type="text" id="templateSongNotFound" placeholder="@{user} Sorry, song not found...">
+              <span class="help-text">Placeholders: {user}, {query}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateVipSongNotFound">VIP Song Not Found</label>
+              <input type="text" id="templateVipSongNotFound" placeholder="@{user} Sorry, song not found (token not spent)...">
+              <span class="help-text">Placeholders: {user}, {query}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateAlreadyInQueue">Already In Queue</label>
+              <input type="text" id="templateAlreadyInQueue" placeholder="@{user} Song already in queue...">
+              <span class="help-text">Placeholders: {user}, {artist}, {title}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateQueueEmpty">Queue Empty</label>
+              <input type="text" id="templateQueueEmpty" placeholder="@{user} Queue is empty...">
+              <span class="help-text">Placeholders: {user}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateQueueList">Queue List Link</label>
+              <input type="text" id="templateQueueList" placeholder="@{user} {count} songs in queue...">
+              <span class="help-text">Placeholders: {user}, {count}, {url}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateNowPlaying">Now Playing</label>
+              <input type="text" id="templateNowPlaying" placeholder="@{user} Now playing...">
+              <span class="help-text">Placeholders: {user}, {artist}, {title}, {requester}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateUpNext">Up Next</label>
+              <input type="text" id="templateUpNext" placeholder="@{user} Up next...">
+              <span class="help-text">Placeholders: {user}, {artist}, {title}, {requester}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateNoSongsPlaying">No Songs Playing</label>
+              <input type="text" id="templateNoSongsPlaying" placeholder="@{user} No songs in queue...">
+              <span class="help-text">Placeholders: {user}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateTokenBalance">Token Balance</label>
+              <input type="text" id="templateTokenBalance" placeholder="@{user} You have {tokens} VIP tokens...">
+              <span class="help-text">Placeholders: {user}, {tokens}</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="templateNoTokens">No Tokens</label>
+              <input type="text" id="templateNoTokens" placeholder="@{user} You don't have any VIP tokens...">
+              <span class="help-text">Placeholders: {user}</span>
+            </div>
+            
+            <div class="template-actions">
+              <button class="btn btn-secondary" id="resetTemplatesBtn">🔄 Reset to Defaults</button>
+            </div>
+          </div>
+
           <div class="settings-actions">
             <button class="btn btn-primary btn-large" id="saveSettingsBtn">💾 Save Settings</button>
           </div>

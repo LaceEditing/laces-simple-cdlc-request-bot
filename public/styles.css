@@ -1029,7 +1029,8 @@ body {
   margin-left: 8px;
 }
 
-.rates-actions {
+.rates-actions,
+.template-actions {
   display: flex;
   justify-content: flex-end;
   padding-top: 12px;

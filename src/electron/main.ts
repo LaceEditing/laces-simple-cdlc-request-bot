@@ -39,6 +39,20 @@ const store = new Store({
       enabled: false,
       authToken: '',
     },
+    responseTemplates: {
+      requestAdded: '@{user} Added "{artist} - {title}" to the queue! Position: #{position} | Queue length: {queueLength}',
+      vipRequestAdded: '@{user} ⭐ VIP Request! Added "{artist} - {title}" to position #{position}! ({tokensRemaining} VIP token(s) remaining)',
+      songNotFound: '@{user} Sorry, "{query}" was not found on Customsforge. Please check the spelling or try a different song.',
+      vipSongNotFound: '@{user} Sorry, "{query}" was not found on Customsforge. Your VIP token was not spent. Please check the spelling or try a different song.',
+      alreadyInQueue: '@{user} "{artist} - {title}" is already in the queue!',
+      queueEmpty: '@{user} The queue is empty! Be the first to request with !request',
+      queueList: '@{user} {count} song(s) in queue. View the list: {url}',
+      nowPlaying: '@{user} Now playing: "{artist} - {title}" (requested by {requester})',
+      upNext: '@{user} Up next: "{artist} - {title}" (requested by {requester})',
+      noSongsPlaying: '@{user} No songs in queue. Request one with !request',
+      tokenBalance: '@{user} You have {tokens} VIP token(s). Use !viprequest to make a priority request!',
+      noTokens: '@{user} You don\'t have any VIP tokens yet! Earn tokens by subscribing, cheering bits, or Super Chatting.',
+    },
   },
 });
 

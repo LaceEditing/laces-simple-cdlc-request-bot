@@ -1,18 +1,67 @@
 import { ChatMessage, CommandContext, CommandHandler, BotConfig } from '../types';
 import { QueueManager, CustomsforgeService, VIPTokenService } from '../services';
 
+export interface ResponseTemplates {
+  requestAdded?: string;
+  vipRequestAdded?: string;
+  songNotFound?: string;
+  vipSongNotFound?: string;
+  alreadyInQueue?: string;
+  queueEmpty?: string;
+  queueList?: string;
+  nowPlaying?: string;
+  upNext?: string;
+  noSongsPlaying?: string;
+  tokenBalance?: string;
+  noTokens?: string;
+}
+
+const DEFAULT_TEMPLATES: Required<ResponseTemplates> = {
+  requestAdded: '@{user} Added "{artist} - {title}" to the queue! Position: #{position} | Queue length: {queueLength}',
+  vipRequestAdded: '@{user} ⭐ VIP Request! Added "{artist} - {title}" to position #{position}! ({tokensRemaining} VIP token(s) remaining)',
+  songNotFound: '@{user} Sorry, "{query}" was not found on Customsforge. Please check the spelling or try a different song.',
+  vipSongNotFound: '@{user} Sorry, "{query}" was not found on Customsforge. Your VIP token was not spent. Please check the spelling or try a different song.',
+  alreadyInQueue: '@{user} "{artist} - {title}" is already in the queue!',
+  queueEmpty: '@{user} The queue is empty! Be the first to request with !request',
+  queueList: '@{user} {count} song(s) in queue. View the list: {url}',
+  nowPlaying: '@{user} Now playing: "{artist} - {title}" (requested by {requester})',
+  upNext: '@{user} Up next: "{artist} - {title}" (requested by {requester})',
+  noSongsPlaying: '@{user} No songs in queue. Request one with !request',
+  tokenBalance: '@{user} You have {tokens} VIP token(s). Use !viprequest to make a priority request!',
+  noTokens: '@{user} You don\'t have any VIP tokens yet! Earn tokens by subscribing, cheering bits, or Super Chatting.',
+};
+
 export class CommandProcessor {
   private commands: Map<string, CommandHandler> = new Map();
   private prefix: string = '!';
+  private templates: Required<ResponseTemplates>;
 
   constructor(
     private queueManager: QueueManager,
     private customsforge: CustomsforgeService,
     private config: BotConfig,
     private getPublicUrl?: () => string,
-    private vipTokenService?: VIPTokenService
+    private vipTokenService?: VIPTokenService,
+    responseTemplates?: ResponseTemplates
   ) {
+    // Merge user templates with defaults (use default if user template is empty)
+    this.templates = { ...DEFAULT_TEMPLATES };
+    if (responseTemplates) {
+      for (const key of Object.keys(DEFAULT_TEMPLATES) as (keyof ResponseTemplates)[]) {
+        if (responseTemplates[key] && responseTemplates[key]!.trim()) {
+          this.templates[key] = responseTemplates[key]!;
+        }
+      }
+    }
     this.registerCommands();
+  }
+
+  private formatTemplate(templateKey: keyof ResponseTemplates, vars: Record<string, string | number>): string {
+    let message = this.templates[templateKey];
+    for (const [key, value] of Object.entries(vars)) {
+      message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+    }
+    return message;
   }
 
   private registerCommands(): void {
@@ -219,19 +268,15 @@ export class CommandProcessor {
       song = this.findBestMatch(searchResult.songs, scoreArtist, scoreTitle);
       console.log(`[Request] Found match: ${song.artist} - ${song.title}`);
     } else {
-      // If Customsforge search fails, allow the request anyway with parsed info
-      console.log(`[Request] Customsforge search failed, allowing request anyway`);
-      song = {
-        artist: effective.artist || 'Unknown Artist',
-        title: effective.title || requestText,
-        album: undefined,
-        customsforgeUrl: undefined,
-      };
+      // Song not found on Customsforge - inform the user
+      console.log(`[Request] Song not found on Customsforge: ${requestText}`);
+      await reply(this.formatTemplate('songNotFound', { user: message.username, query: requestText }));
+      return;
     }
 
     // Check if song is already in queue
     if (this.queueManager.isSongInQueue(song.artist, song.title)) {
-      await reply(`@${message.username} "${song.artist} - ${song.title}" is already in the queue!`);
+      await reply(this.formatTemplate('alreadyInQueue', { user: message.username, artist: song.artist, title: song.title }));
       return;
     }
 
@@ -239,10 +284,13 @@ export class CommandProcessor {
     const request = this.queueManager.addRequest(song, message.userId, message.username, message.platform);
     const position = this.queueManager.getQueuePosition(request.id);
 
-    await reply(
-      `@${message.username} Added "${song.artist} - ${song.title}" to the queue! ` +
-      `Position: #${position} | Queue length: ${this.queueManager.getQueueLength()}`
-    );
+    await reply(this.formatTemplate('requestAdded', {
+      user: message.username,
+      artist: song.artist,
+      title: song.title,
+      position: position,
+      queueLength: this.queueManager.getQueueLength()
+    }));
   }
 
   private async handleVIPRequest(ctx: CommandContext): Promise<void> {
@@ -306,21 +354,19 @@ export class CommandProcessor {
       const scoreTitle = effective.title || requestText;
       song = this.findBestMatch(searchResult.songs, scoreArtist, scoreTitle);
     } else {
-      song = {
-        artist: effective.artist || 'Unknown Artist',
-        title: effective.title || requestText,
-        album: undefined,
-        customsforgeUrl: undefined,
-      };
+      // Song not found on Customsforge - inform the user (no token spent)
+      console.log(`[VIP Request] Song not found on Customsforge: ${requestText}`);
+      await reply(this.formatTemplate('vipSongNotFound', { user: message.username, query: requestText }));
+      return;
     }
 
     // Check if song is already in queue
     if (this.queueManager.isSongInQueue(song.artist, song.title)) {
-      await reply(`@${message.username} "${song.artist} - ${song.title}" is already in the queue!`);
+      await reply(this.formatTemplate('alreadyInQueue', { user: message.username, artist: song.artist, title: song.title }));
       return;
     }
 
-    // Spend the VIP token
+    // Spend the VIP token (only after confirming song exists on Customsforge)
     const spendResult = this.vipTokenService.spendTokens(message.platform, message.userId, 1);
     if (!spendResult.success) {
       await reply(`@${message.username} Failed to use VIP token: ${spendResult.error}`);
@@ -331,10 +377,13 @@ export class CommandProcessor {
     const request = this.queueManager.addRequest(song, message.userId, message.username, message.platform, true);
     const position = this.queueManager.getQueuePosition(request.id);
 
-    await reply(
-      `@${message.username} ⭐ VIP Request! Added "${song.artist} - ${song.title}" to position #${position}! ` +
-      `(${spendResult.remainingTokens} VIP token(s) remaining)`
-    );
+    await reply(this.formatTemplate('vipRequestAdded', {
+      user: message.username,
+      artist: song.artist,
+      title: song.title,
+      position: position,
+      tokensRemaining: spendResult.remainingTokens
+    }));
   }
 
   private async handleList(ctx: CommandContext): Promise<void> {
@@ -345,9 +394,9 @@ export class CommandProcessor {
     const queueLength = this.queueManager.getQueueLength();
 
     if (queueLength === 0) {
-      await reply(`@${message.username} The queue is empty! Be the first to request with !request`);
+      await reply(this.formatTemplate('queueEmpty', { user: message.username }));
     } else {
-      await reply(`@${message.username} ${queueLength} song(s) in queue. View the list: ${listUrl}`);
+      await reply(this.formatTemplate('queueList', { user: message.username, count: queueLength, url: listUrl }));
     }
   }
 
@@ -356,13 +405,23 @@ export class CommandProcessor {
     const { nowPlaying } = this.queueManager.getQueueForDisplay();
 
     if (nowPlaying) {
-      await reply(`@${message.username} Now playing: "${nowPlaying.song.artist} - ${nowPlaying.song.title}" (requested by ${nowPlaying.requestedBy})`);
+      await reply(this.formatTemplate('nowPlaying', {
+        user: message.username,
+        artist: nowPlaying.song.artist,
+        title: nowPlaying.song.title,
+        requester: nowPlaying.requestedBy
+      }));
     } else {
       const next = this.queueManager.getNextRequest();
       if (next) {
-        await reply(`@${message.username} Up next: "${next.song.artist} - ${next.song.title}" (requested by ${next.requestedBy})`);
+        await reply(this.formatTemplate('upNext', {
+          user: message.username,
+          artist: next.song.artist,
+          title: next.song.title,
+          requester: next.requestedBy
+        }));
       } else {
-        await reply(`@${message.username} No songs in queue. Request one with !request`);
+        await reply(this.formatTemplate('noSongsPlaying', { user: message.username }));
       }
     }
   }
@@ -679,10 +738,10 @@ export class CommandProcessor {
     // Ensure user is registered in the system (so !givevip can find them by displayName)
     const user = this.vipTokenService.ensureUser(message.platform, message.userId, message.username);
     
-    if (user.totalEarned > 0) {
-      await reply(`@${message.username} you have ${user.tokens} VIP token(s) (total earned: ${user.totalEarned})`);
+    if (user.tokens > 0) {
+      await reply(this.formatTemplate('tokenBalance', { user: message.username, tokens: user.tokens }));
     } else {
-      await reply(`@${message.username} you have ${user.tokens} VIP token(s). Earn tokens by subscribing, gifting subs, cheering bits, or Super Chatting!`);
+      await reply(this.formatTemplate('noTokens', { user: message.username }));
     }
   }
 }

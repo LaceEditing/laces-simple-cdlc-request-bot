@@ -36,6 +36,20 @@ interface BotSettings {
     enabled: boolean;
     authToken: string;
   };
+  responseTemplates?: {
+    requestAdded?: string;
+    vipRequestAdded?: string;
+    songNotFound?: string;
+    vipSongNotFound?: string;
+    alreadyInQueue?: string;
+    queueEmpty?: string;
+    queueList?: string;
+    nowPlaying?: string;
+    upNext?: string;
+    noSongsPlaying?: string;
+    tokenBalance?: string;
+    noTokens?: string;
+  };
 }
 
 interface BotUrls {
@@ -84,7 +98,8 @@ export class BotManager {
       this.customsforge,
       config,
       () => this.tunnelUrl || `http://localhost:${settings.web.port}`,
-      this.vipTokenService
+      this.vipTokenService,
+      settings.responseTemplates
     );
     this.webServer = new WebServer(this.queueManager, config);
     this.urls.local = `http://localhost:${settings.web.port}`;
