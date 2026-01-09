@@ -84,20 +84,33 @@ async function loadSettings() {
   document.getElementById('hotkeyPlayed').value = hotkeys.played || 'Ctrl+P';
   document.getElementById('hotkeyClear').value = hotkeys.clear || 'Ctrl+C';
 
-  // Response Templates
+  // Response Templates (with null checks to prevent script crash)
   const templates = settings.responseTemplates || {};
-  document.getElementById('templateRequestAdded').value = templates.requestAdded || '';
-  document.getElementById('templateVipRequestAdded').value = templates.vipRequestAdded || '';
-  document.getElementById('templateSongNotFound').value = templates.songNotFound || '';
-  document.getElementById('templateVipSongNotFound').value = templates.vipSongNotFound || '';
-  document.getElementById('templateAlreadyInQueue').value = templates.alreadyInQueue || '';
-  document.getElementById('templateQueueEmpty').value = templates.queueEmpty || '';
-  document.getElementById('templateQueueList').value = templates.queueList || '';
-  document.getElementById('templateNowPlaying').value = templates.nowPlaying || '';
-  document.getElementById('templateUpNext').value = templates.upNext || '';
-  document.getElementById('templateNoSongsPlaying').value = templates.noSongsPlaying || '';
-  document.getElementById('templateTokenBalance').value = templates.tokenBalance || '';
-  document.getElementById('templateNoTokens').value = templates.noTokens || '';
+  const templateRequestAdded = document.getElementById('templateRequestAdded');
+  const templateVipRequestAdded = document.getElementById('templateVipRequestAdded');
+  const templateSongNotFound = document.getElementById('templateSongNotFound');
+  const templateVipSongNotFound = document.getElementById('templateVipSongNotFound');
+  const templateAlreadyInQueue = document.getElementById('templateAlreadyInQueue');
+  const templateQueueEmpty = document.getElementById('templateQueueEmpty');
+  const templateQueueList = document.getElementById('templateQueueList');
+  const templateNowPlaying = document.getElementById('templateNowPlaying');
+  const templateUpNext = document.getElementById('templateUpNext');
+  const templateNoSongsPlaying = document.getElementById('templateNoSongsPlaying');
+  const templateTokenBalance = document.getElementById('templateTokenBalance');
+  const templateNoTokens = document.getElementById('templateNoTokens');
+  
+  if (templateRequestAdded) templateRequestAdded.value = templates.requestAdded || '';
+  if (templateVipRequestAdded) templateVipRequestAdded.value = templates.vipRequestAdded || '';
+  if (templateSongNotFound) templateSongNotFound.value = templates.songNotFound || '';
+  if (templateVipSongNotFound) templateVipSongNotFound.value = templates.vipSongNotFound || '';
+  if (templateAlreadyInQueue) templateAlreadyInQueue.value = templates.alreadyInQueue || '';
+  if (templateQueueEmpty) templateQueueEmpty.value = templates.queueEmpty || '';
+  if (templateQueueList) templateQueueList.value = templates.queueList || '';
+  if (templateNowPlaying) templateNowPlaying.value = templates.nowPlaying || '';
+  if (templateUpNext) templateUpNext.value = templates.upNext || '';
+  if (templateNoSongsPlaying) templateNoSongsPlaying.value = templates.noSongsPlaying || '';
+  if (templateTokenBalance) templateTokenBalance.value = templates.tokenBalance || '';
+  if (templateNoTokens) templateNoTokens.value = templates.noTokens || '';
 }
 
 async function saveSettings() {
@@ -136,18 +149,18 @@ async function saveSettings() {
       authToken: document.getElementById('ngrokToken').value,
     },
     responseTemplates: {
-      requestAdded: document.getElementById('templateRequestAdded').value,
-      vipRequestAdded: document.getElementById('templateVipRequestAdded').value,
-      songNotFound: document.getElementById('templateSongNotFound').value,
-      vipSongNotFound: document.getElementById('templateVipSongNotFound').value,
-      alreadyInQueue: document.getElementById('templateAlreadyInQueue').value,
-      queueEmpty: document.getElementById('templateQueueEmpty').value,
-      queueList: document.getElementById('templateQueueList').value,
-      nowPlaying: document.getElementById('templateNowPlaying').value,
-      upNext: document.getElementById('templateUpNext').value,
-      noSongsPlaying: document.getElementById('templateNoSongsPlaying').value,
-      tokenBalance: document.getElementById('templateTokenBalance').value,
-      noTokens: document.getElementById('templateNoTokens').value,
+      requestAdded: document.getElementById('templateRequestAdded')?.value || '',
+      vipRequestAdded: document.getElementById('templateVipRequestAdded')?.value || '',
+      songNotFound: document.getElementById('templateSongNotFound')?.value || '',
+      vipSongNotFound: document.getElementById('templateVipSongNotFound')?.value || '',
+      alreadyInQueue: document.getElementById('templateAlreadyInQueue')?.value || '',
+      queueEmpty: document.getElementById('templateQueueEmpty')?.value || '',
+      queueList: document.getElementById('templateQueueList')?.value || '',
+      nowPlaying: document.getElementById('templateNowPlaying')?.value || '',
+      upNext: document.getElementById('templateUpNext')?.value || '',
+      noSongsPlaying: document.getElementById('templateNoSongsPlaying')?.value || '',
+      tokenBalance: document.getElementById('templateTokenBalance')?.value || '',
+      noTokens: document.getElementById('templateNoTokens')?.value || '',
     },
   };
   
@@ -156,7 +169,7 @@ async function saveSettings() {
   showToast('Settings saved!', 'success');
 }
 
-document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+document.getElementById('saveSettingsBtn')?.addEventListener('click', saveSettings);
 
 // ============================================
 // Bot Control
@@ -199,8 +212,8 @@ async function stopBot() {
   showToast('Bot stopped', 'success');
 }
 
-document.getElementById('startBtn').addEventListener('click', startBot);
-document.getElementById('stopBtn').addEventListener('click', stopBot);
+document.getElementById('startBtn')?.addEventListener('click', startBot);
+document.getElementById('stopBtn')?.addEventListener('click', stopBot);
 
 // ============================================
 // Status Updates
@@ -481,22 +494,22 @@ function getDragAfterElement(container, y) {
 }
 
 // Queue control buttons
-document.getElementById('nextBtn').addEventListener('click', async () => {
+document.getElementById('nextBtn')?.addEventListener('click', async () => {
   await window.electronAPI.queueNext();
   refreshQueue();
 });
 
-document.getElementById('playedBtn').addEventListener('click', async () => {
+document.getElementById('playedBtn')?.addEventListener('click', async () => {
   await window.electronAPI.queuePlayed();
   refreshQueue();
 });
 
-document.getElementById('skipBtn').addEventListener('click', async () => {
+document.getElementById('skipBtn')?.addEventListener('click', async () => {
   await window.electronAPI.queueSkip();
   refreshQueue();
 });
 
-document.getElementById('clearQueueBtn').addEventListener('click', async () => {
+document.getElementById('clearQueueBtn')?.addEventListener('click', async () => {
   if (confirm('Are you sure you want to clear the entire queue?')) {
     await window.electronAPI.queueClear();
     refreshQueue();
@@ -910,22 +923,23 @@ const DEFAULT_TEMPLATES = {
   upNext: '@{user} Up next: "{artist} - {title}" (requested by {requester})',
   noSongsPlaying: '@{user} No songs in queue. Request one with !request',
   tokenBalance: '@{user} You have {tokens} VIP token(s). Use !viprequest to make a priority request!',
-  noTokens: '@{user} You don\\'t have any VIP tokens yet! Earn tokens by subscribing, cheering bits, or Super Chatting.',
+  noTokens: '@{user} You don\'t have any VIP tokens yet! Earn tokens by subscribing, cheering bits, or Super Chatting.',
 };
 
 function resetTemplatesToDefaults() {
-  document.getElementById('templateRequestAdded').value = DEFAULT_TEMPLATES.requestAdded;
-  document.getElementById('templateVipRequestAdded').value = DEFAULT_TEMPLATES.vipRequestAdded;
-  document.getElementById('templateSongNotFound').value = DEFAULT_TEMPLATES.songNotFound;
-  document.getElementById('templateVipSongNotFound').value = DEFAULT_TEMPLATES.vipSongNotFound;
-  document.getElementById('templateAlreadyInQueue').value = DEFAULT_TEMPLATES.alreadyInQueue;
-  document.getElementById('templateQueueEmpty').value = DEFAULT_TEMPLATES.queueEmpty;
-  document.getElementById('templateQueueList').value = DEFAULT_TEMPLATES.queueList;
-  document.getElementById('templateNowPlaying').value = DEFAULT_TEMPLATES.nowPlaying;
-  document.getElementById('templateUpNext').value = DEFAULT_TEMPLATES.upNext;
-  document.getElementById('templateNoSongsPlaying').value = DEFAULT_TEMPLATES.noSongsPlaying;
-  document.getElementById('templateTokenBalance').value = DEFAULT_TEMPLATES.tokenBalance;
-  document.getElementById('templateNoTokens').value = DEFAULT_TEMPLATES.noTokens;
+  const el = (id) => document.getElementById(id);
+  if (el('templateRequestAdded')) el('templateRequestAdded').value = DEFAULT_TEMPLATES.requestAdded;
+  if (el('templateVipRequestAdded')) el('templateVipRequestAdded').value = DEFAULT_TEMPLATES.vipRequestAdded;
+  if (el('templateSongNotFound')) el('templateSongNotFound').value = DEFAULT_TEMPLATES.songNotFound;
+  if (el('templateVipSongNotFound')) el('templateVipSongNotFound').value = DEFAULT_TEMPLATES.vipSongNotFound;
+  if (el('templateAlreadyInQueue')) el('templateAlreadyInQueue').value = DEFAULT_TEMPLATES.alreadyInQueue;
+  if (el('templateQueueEmpty')) el('templateQueueEmpty').value = DEFAULT_TEMPLATES.queueEmpty;
+  if (el('templateQueueList')) el('templateQueueList').value = DEFAULT_TEMPLATES.queueList;
+  if (el('templateNowPlaying')) el('templateNowPlaying').value = DEFAULT_TEMPLATES.nowPlaying;
+  if (el('templateUpNext')) el('templateUpNext').value = DEFAULT_TEMPLATES.upNext;
+  if (el('templateNoSongsPlaying')) el('templateNoSongsPlaying').value = DEFAULT_TEMPLATES.noSongsPlaying;
+  if (el('templateTokenBalance')) el('templateTokenBalance').value = DEFAULT_TEMPLATES.tokenBalance;
+  if (el('templateNoTokens')) el('templateNoTokens').value = DEFAULT_TEMPLATES.noTokens;
   showToast('Templates reset to defaults (click Save Settings to apply)', 'success');
 }
 
