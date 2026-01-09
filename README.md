@@ -46,21 +46,27 @@ The Public URL is what the chat will see via !list
 CHAT COMMANDS
 ------------------------------------
 
-Request:
+ -!request <artist - song> (will attempt to search customsforge and return the most accurate result the user provides
+ 
+ -!sr (same as !request)
 
- !request <artist - song> (will attempt to search customsforge and return the most accurate result the user provides
- !sr (same as !request)
+  -!list (shows the public URL song list for the viewer to see)
+  
+  -!song (show's what's currently playing, or what's next if nothing is playing)
+  
+  -!position (shows the user's current spot in the list)
+  
+  -!remove (removes the user's most recent request from the list)
+  
 
-Common:
 
-  !list (shows the public URL song list for the viewer to see)
-  !song (show's what's currently playing, or what's next if nothing is playing)
-  !position (shows the user's current spot in the list)
-  !remove (removes the user's most recent request from the list)
+(MOD ONLY ONES):
 
-Mods:
 
-  !next
-  !played (Marks current playing song as finished)
-  !skip
-  !clear (streamer only, kills entire queue)
+  -!next
+  
+  -!played (Marks current playing song as finished)
+  
+  -!skip
+  
+  -!clear (streamer only, kills entire queue)
