@@ -599,6 +599,53 @@ body {
   color: var(--text-muted);
 }
 
+/* VIP Request Styling */
+.queue-item.vip-request {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 193, 7, 0.1) 100%);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
+}
+
+.queue-item.vip-request:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.15) 100%);
+  border-color: rgba(255, 215, 0, 0.6);
+}
+
+.queue-item.vip-request .queue-position {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+  color: #4a3800;
+}
+
+.queue-item.vip-request .queue-song .title {
+  color: #b8860b;
+}
+
+.vip-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+  color: #4a3800;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+:root[data-theme="dark"] .queue-item.vip-request {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+:root[data-theme="dark"] .queue-item.vip-request:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 193, 7, 0.1) 100%);
+}
+
+:root[data-theme="dark"] .queue-item.vip-request .queue-song .title {
+  color: #ffd700;
+}
+
+
 .queue-actions {
   display: flex;
   align-items: center;
@@ -939,4 +986,240 @@ body {
 :root[data-theme="dark"] .format-list code {
   background: var(--lavender-800);
   color: var(--text-primary);
+}
+
+/* ============================================
+   VIP Token Management Styles
+   ============================================ */
+
+.vip-container {
+  display: grid;
+  gap: 20px;
+}
+
+.vip-rates-card,
+.vip-users-card,
+.vip-edit-card {
+  width: 100%;
+}
+
+.rates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.rates-section {
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.rates-section h3 {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.rate-unit {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+
+.rates-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* VIP Search Bar */
+.vip-search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.vip-search-bar input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+}
+
+.vip-search-bar input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* VIP Users List */
+.vip-users-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.empty-vip {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-vip .empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.empty-vip .empty-hint {
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.vip-user-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  transition: background var(--transition-fast);
+}
+
+.vip-user-item:last-child {
+  border-bottom: none;
+}
+
+.vip-user-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.vip-rank {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  min-width: 36px;
+  text-align: center;
+}
+
+.vip-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vip-username {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vip-platform {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.vip-platform.twitch {
+  background: rgba(145, 70, 255, 0.15);
+  color: var(--twitch-color);
+}
+
+.vip-platform.youtube {
+  background: rgba(255, 0, 0, 0.1);
+  color: var(--youtube-color);
+}
+
+.vip-tokens {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
+}
+
+.token-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.token-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.vip-stats {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.vip-stats .total-earned {
+  cursor: help;
+}
+
+.vip-actions {
+  min-width: 40px;
+}
+
+/* VIP Edit Form */
+.vip-edit-card select {
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  width: 100%;
+}
+
+.vip-edit-card select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.vip-edit-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dark mode overrides for VIP */
+:root[data-theme="dark"] .rates-section {
+  background: var(--bg-tertiary);
+}
+
+:root[data-theme="dark"] .vip-users-list {
+  background: var(--bg-tertiary);
+}
+
+:root[data-theme="dark"] .vip-user-item {
+  background: var(--bg-secondary);
+}
+
+:root[data-theme="dark"] .vip-user-item:hover {
+  background: var(--bg-tertiary);
+}
+
+:root[data-theme="dark"] .vip-search-bar input,
+:root[data-theme="dark"] .vip-edit-card select {
+  background: var(--bg-tertiary);
 }

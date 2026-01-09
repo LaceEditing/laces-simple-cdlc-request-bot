@@ -25,6 +25,10 @@
           <span class="nav-icon">📋</span>
           <span>Queue</span>
         </li>
+        <li class="nav-item" data-tab="vip">
+          <span class="nav-icon">⭐</span>
+          <span>VIP Tokens</span>
+        </li>
         <li class="nav-item" data-tab="settings">
           <span class="nav-icon">⚙️</span>
           <span>Settings</span>
@@ -153,6 +157,155 @@
               <p>No songs in queue</p>
               <p class="empty-hint">Songs requested via !request will appear here</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIP Tokens Tab -->
+      <section class="tab-content" id="vip">
+        <header class="page-header">
+          <h1>VIP Token Management</h1>
+          <p>Manage viewer VIP tokens earned from subscriptions, bits, and donations</p>
+        </header>
+
+        <div class="vip-container">
+          <!-- Token Rates Card -->
+          <div class="card vip-rates-card">
+            <div class="card-header">
+              <span class="platform-icon">💰</span>
+              <h2>Token Earning Rates</h2>
+            </div>
+            
+            <div class="rates-grid">
+              <div class="rates-section">
+                <h3>📺 Twitch</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="rateTwitchPrime">Prime Sub</label>
+                    <input type="number" id="rateTwitchPrime" min="0" step="1" value="1">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="rateTwitchTier1">Tier 1 Sub</label>
+                    <input type="number" id="rateTwitchTier1" min="0" step="1" value="1">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="rateTwitchTier2">Tier 2 Sub</label>
+                    <input type="number" id="rateTwitchTier2" min="0" step="1" value="2">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="rateTwitchTier3">Tier 3 Sub</label>
+                    <input type="number" id="rateTwitchTier3" min="0" step="1" value="4">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="rateTwitchBitsAmount">Bits Required</label>
+                    <input type="number" id="rateTwitchBitsAmount" min="1" step="1" value="250">
+                    <span class="rate-unit">bits</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="rateTwitchBitsTokens">Tokens Earned</label>
+                    <input type="number" id="rateTwitchBitsTokens" min="1" step="1" value="1">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="rates-section">
+                <h3>▶️ YouTube</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="rateYoutubeMember">Membership</label>
+                    <input type="number" id="rateYoutubeMember" min="0" step="1" value="1">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="rateYoutubeSuperChatMin">Super Chat Min ($)</label>
+                    <input type="number" id="rateYoutubeSuperChatMin" min="0.01" step="0.01" value="2.50">
+                    <span class="rate-unit">USD</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="rateYoutubeSuperChat">Tokens per Min</label>
+                    <input type="number" id="rateYoutubeSuperChat" min="1" step="1" value="1">
+                    <span class="rate-unit">tokens</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="rates-actions">
+              <button class="btn btn-primary" id="saveRatesBtn">💾 Save Rates</button>
+            </div>
+          </div>
+
+          <!-- User Search & Management Card -->
+          <div class="card vip-users-card">
+            <div class="card-header">
+              <span class="platform-icon">👥</span>
+              <h2>VIP Users</h2>
+            </div>
+            
+            <div class="vip-search-bar">
+              <input type="text" id="vipSearchInput" placeholder="Search by username...">
+              <button class="btn btn-secondary" id="vipSearchBtn">🔍 Search</button>
+              <button class="btn btn-secondary" id="vipShowAllBtn">📋 Show All</button>
+            </div>
+            
+            <div class="vip-users-list" id="vipUsersList">
+              <div class="empty-vip">
+                <span class="empty-icon">⭐</span>
+                <p>No VIP users yet</p>
+                <p class="empty-hint">Users earn tokens through subscriptions, bits, and Super Chats</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add/Edit User Card -->
+          <div class="card vip-edit-card">
+            <div class="card-header">
+              <span class="platform-icon">✏️</span>
+              <h2>Add/Edit User Tokens</h2>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vipEditPlatform">Platform</label>
+                <select id="vipEditPlatform">
+                  <option value="twitch">Twitch</option>
+                  <option value="youtube">YouTube</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 2;">
+                <label for="vipEditUsername">Username</label>
+                <input type="text" id="vipEditUsername" placeholder="Enter username (e.g., JohnDoe)">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vipEditTokens">Token Amount</label>
+                <input type="number" id="vipEditTokens" min="0" step="1" value="0">
+              </div>
+              <div class="form-group">
+                <label for="vipEditReason">Reason (for award)</label>
+                <input type="text" id="vipEditReason" placeholder="Manual adjustment">
+              </div>
+            </div>
+            
+            <div class="vip-edit-actions">
+              <button class="btn btn-primary" id="vipSetTokensBtn">Set Total Tokens</button>
+              <button class="btn btn-secondary" id="vipAwardTokensBtn">+ Award Tokens</button>
+            </div>
+            
+            <p class="help-text" style="margin-top: 1rem;">
+              💡 Enter a username to find an existing user or create a new one. The system will automatically link them when they interact with chat.
+            </p>
           </div>
         </div>
       </section>
@@ -344,6 +497,18 @@
                 <td>Shortcut for !request</td>
               </tr>
               <tr>
+                <td><code>!viprequest Artist - Song</code></td>
+                <td>VIP request (costs 1 token, priority queue)</td>
+              </tr>
+              <tr>
+                <td><code>!vipsr</code> / <code>!vipsong</code></td>
+                <td>Shortcuts for !viprequest</td>
+              </tr>
+              <tr>
+                <td><code>!tokens</code></td>
+                <td>Check your VIP token balance</td>
+              </tr>
+              <tr>
                 <td><code>!list</code></td>
                 <td>Get link to the queue page</td>
               </tr>
@@ -390,10 +555,54 @@
                 <td>Skip current song</td>
               </tr>
               <tr>
+                <td><code>!givevip &lt;user&gt; &lt;amount&gt;</code></td>
+                <td>Give VIP tokens to a user</td>
+              </tr>
+              <tr>
                 <td><code>!clear</code></td>
                 <td>Clear entire queue (broadcaster only)</td>
               </tr>
             </table>
+          </div>
+
+          <div class="card">
+            <h2>🧪 Test Commands (Mod Only)</h2>
+            <table class="commands-table">
+              <tr>
+                <td><code>!testsub [tier]</code></td>
+                <td>Simulate a subscription (1, 2, 3, or prime)</td>
+              </tr>
+              <tr>
+                <td><code>!testbits &lt;amount&gt;</code></td>
+                <td>Simulate a bits donation (default: 250)</td>
+              </tr>
+              <tr>
+                <td><code>!testsuperchat &lt;amount&gt;</code></td>
+                <td>Simulate a Super Chat in $ (default: $5)</td>
+              </tr>
+            </table>
+            <p class="help-text" style="margin-top: 0.5rem;">
+              These commands let you test the VIP token system without real purchases.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>⭐ VIP Token System</h2>
+            <table class="commands-table">
+              <tr>
+                <td><code>!tokens</code></td>
+                <td>Check your VIP token balance</td>
+              </tr>
+            </table>
+            <p class="help-text" style="margin-top: 1rem;">
+              <strong>How to earn VIP tokens:</strong><br>
+              • Twitch Prime/Tier 1 Sub: 1 token<br>
+              • Twitch Tier 2 Sub: 2 tokens<br>
+              • Twitch Tier 3 Sub: 4 tokens<br>
+              • Twitch Bits: 1 token per 250 bits<br>
+              • YouTube Membership: 1 token<br>
+              • YouTube Super Chat: 1 token per $2.50
+            </p>
           </div>
 
           <div class="card">

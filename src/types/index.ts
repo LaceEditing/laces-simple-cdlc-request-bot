@@ -7,6 +7,7 @@ export interface SongRequest {
   platform: 'twitch' | 'youtube';
   requestedAt: Date;
   status: 'pending' | 'playing' | 'completed' | 'skipped';
+  isVIP?: boolean;
 }
 
 export interface SongInfo {

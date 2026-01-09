@@ -215,6 +215,126 @@ function setupIpcHandlers(): void {
   ipcMain.handle('open-external', (_, url: string) => {
     shell.openExternal(url);
   });
+
+  // ============================================
+  // VIP Token IPC Handlers
+  // ============================================
+
+  // Get all VIP users
+  ipcMain.handle('vip-get-users', () => {
+    if (!botManager) {
+      return [];
+    }
+    return botManager.getVIPUsers();
+  });
+
+  // Search VIP users
+  ipcMain.handle('vip-search-users', (_, query: string) => {
+    if (!botManager) {
+      return [];
+    }
+    return botManager.searchVIPUsers(query);
+  });
+
+  // Get specific VIP user
+  ipcMain.handle('vip-get-user', (_, platform: 'twitch' | 'youtube', platformUserId: string) => {
+    if (!botManager) {
+      return null;
+    }
+    return botManager.getVIPUser(platform, platformUserId);
+  });
+
+  // Get VIP balance
+  ipcMain.handle('vip-get-balance', (_, platform: 'twitch' | 'youtube', platformUserId: string) => {
+    if (!botManager) {
+      return 0;
+    }
+    return botManager.getVIPBalance(platform, platformUserId);
+  });
+
+  // Set VIP user tokens
+  ipcMain.handle('vip-set-tokens', (_, platform: 'twitch' | 'youtube', platformUserId: string, displayName: string, tokens: number) => {
+    if (!botManager) {
+      return { success: false, error: 'Bot not running' };
+    }
+    try {
+      const user = botManager.setVIPUserTokens(platform, platformUserId, displayName, tokens);
+      return { success: true, user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Award VIP tokens
+  ipcMain.handle('vip-award-tokens', (_, platform: 'twitch' | 'youtube', platformUserId: string, displayName: string, amount: number, description: string) => {
+    if (!botManager) {
+      return { success: false, error: 'Bot not running' };
+    }
+    try {
+      const user = botManager.awardVIPTokens(platform, platformUserId, displayName, amount, description);
+      return { success: true, user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Award VIP tokens by username (GUI-friendly)
+  ipcMain.handle('vip-award-tokens-by-username', (_, platform: 'twitch' | 'youtube', username: string, amount: number, description: string) => {
+    if (!botManager) {
+      return { success: false, error: 'Bot not running' };
+    }
+    try {
+      const user = botManager.awardVIPTokensByUsername(platform, username, amount, description);
+      return { success: true, user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Set VIP tokens by username (GUI-friendly)
+  ipcMain.handle('vip-set-tokens-by-username', (_, platform: 'twitch' | 'youtube', username: string, tokens: number) => {
+    if (!botManager) {
+      return { success: false, error: 'Bot not running' };
+    }
+    try {
+      const user = botManager.setVIPTokensByUsername(platform, username, tokens);
+      return { success: true, user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Get VIP rates
+  ipcMain.handle('vip-get-rates', () => {
+    if (!botManager) {
+      // Return defaults when bot not running
+      return {
+        twitchTier1: 1,
+        twitchTier2: 2,
+        twitchTier3: 4,
+        twitchPrime: 1,
+        twitchBitsAmount: 250,
+        twitchBitsTokens: 1,
+        youtubeMember: 1,
+        youtubeSuperChat: 1,
+        youtubeSuperChatMinimum: 2.50,
+      };
+    }
+    return botManager.getVIPRates();
+  });
+
+  // Set VIP rates
+  ipcMain.handle('vip-set-rates', (_, rates: any) => {
+    if (!botManager) {
+      return { success: false, error: 'Bot not running' };
+    }
+    try {
+      botManager.setVIPRates(rates);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
 }
 
 app.whenReady().then(() => {

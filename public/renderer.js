@@ -338,13 +338,14 @@ async function refreshQueue() {
     `;
   } else {
     queueList.innerHTML = pending.map((item, index) => `
-      <div class="queue-item" draggable="true" data-index="${index}">
+      <div class="queue-item ${item.isVIP ? 'vip-request' : ''}" draggable="true" data-index="${index}">
         <div class="queue-position">${index + 1}</div>
         <div class="queue-song">
-          <div class="title">${escapeHtml(item.song.title)}</div>
+          <div class="title">${item.isVIP ? '⭐ ' : ''}${escapeHtml(item.song.title)}</div>
           <div class="artist">${escapeHtml(item.song.artist)}</div>
         </div>
         <div class="queue-meta">
+          ${item.isVIP ? '<div class="vip-badge">VIP</div>' : ''}
           <div class="platform ${item.platform}">${item.platform}</div>
           <div class="requester">${escapeHtml(item.requestedBy)}</div>
         </div>
@@ -524,10 +525,17 @@ async function init() {
   await refreshStatus();
   await refreshQueue();
   
+  // Initialize VIP system
+  await loadVIPRates();
+  await loadVIPUsers();
+  setupVIPHandlers();
+  
   // Refresh queue every 5 seconds
   setInterval(refreshQueue, 5000);
   // Refresh status every 3 seconds to update connection indicators
   setInterval(refreshStatus, 3000);
+  // Refresh VIP users every 10 seconds
+  setInterval(() => loadVIPUsers(), 10000);
   
   // Add keyboard hotkeys
   setupHotkeys();
@@ -688,5 +696,203 @@ function setupHotkeyInputs() {
   }, true);
 }
 
-// Wait for DOM
-document.addEventListener('DOMContentLoaded', init);
+// ============================================
+// VIP Token Management
+// ============================================
+
+async function loadVIPRates() {
+  try {
+    const rates = await window.electronAPI.vipGetRates();
+    
+    document.getElementById('rateTwitchPrime').value = rates.twitchPrime || 1;
+    document.getElementById('rateTwitchTier1').value = rates.twitchTier1 || 1;
+    document.getElementById('rateTwitchTier2').value = rates.twitchTier2 || 2;
+    document.getElementById('rateTwitchTier3').value = rates.twitchTier3 || 4;
+    document.getElementById('rateTwitchBitsAmount').value = rates.twitchBitsAmount || 250;
+    document.getElementById('rateTwitchBitsTokens').value = rates.twitchBitsTokens || 1;
+    document.getElementById('rateYoutubeMember').value = rates.youtubeMember || 1;
+    document.getElementById('rateYoutubeSuperChatMin').value = rates.youtubeSuperChatMinimum || 2.50;
+    document.getElementById('rateYoutubeSuperChat').value = rates.youtubeSuperChat || 1;
+  } catch (e) {
+    console.error('Error loading VIP rates:', e);
+  }
+}
+
+async function saveVIPRates() {
+  const rates = {
+    twitchPrime: parseInt(document.getElementById('rateTwitchPrime').value) || 1,
+    twitchTier1: parseInt(document.getElementById('rateTwitchTier1').value) || 1,
+    twitchTier2: parseInt(document.getElementById('rateTwitchTier2').value) || 2,
+    twitchTier3: parseInt(document.getElementById('rateTwitchTier3').value) || 4,
+    twitchBitsAmount: parseInt(document.getElementById('rateTwitchBitsAmount').value) || 250,
+    twitchBitsTokens: parseInt(document.getElementById('rateTwitchBitsTokens').value) || 1,
+    youtubeMember: parseInt(document.getElementById('rateYoutubeMember').value) || 1,
+    youtubeSuperChatMinimum: parseFloat(document.getElementById('rateYoutubeSuperChatMin').value) || 2.50,
+    youtubeSuperChat: parseInt(document.getElementById('rateYoutubeSuperChat').value) || 1,
+  };
+  
+  const result = await window.electronAPI.vipSetRates(rates);
+  if (result.success) {
+    showToast('VIP rates saved!', 'success');
+  } else {
+    showToast('Failed to save rates: ' + (result.error || 'Unknown error'), 'error');
+  }
+}
+
+async function loadVIPUsers(searchQuery = '') {
+  const listEl = document.getElementById('vipUsersList');
+  
+  try {
+    let users;
+    if (searchQuery) {
+      users = await window.electronAPI.vipSearchUsers(searchQuery);
+    } else {
+      users = await window.electronAPI.vipGetUsers();
+    }
+    
+    if (!users || users.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-vip">
+          <span class="empty-icon">⭐</span>
+          <p>${searchQuery ? 'No users found' : 'No VIP users yet'}</p>
+          <p class="empty-hint">${searchQuery ? 'Try a different search term' : 'Users earn tokens through subscriptions, bits, and Super Chats'}</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Sort by tokens (descending)
+    users.sort((a, b) => b.tokens - a.tokens);
+    
+    listEl.innerHTML = users.map((user, index) => `
+      <div class="vip-user-item" data-platform="${user.platform}" data-userid="${user.platformUserId}" data-name="${escapeHtml(user.displayName)}">
+        <div class="vip-rank">#${index + 1}</div>
+        <div class="vip-user-info">
+          <div class="vip-username">${escapeHtml(user.displayName)}</div>
+          <div class="vip-platform ${user.platform}">${user.platform}</div>
+        </div>
+        <div class="vip-tokens">
+          <span class="token-count">${user.tokens}</span>
+          <span class="token-label">tokens</span>
+        </div>
+        <div class="vip-stats">
+          <span class="total-earned" title="Total earned">📈 ${user.totalEarned || 0}</span>
+        </div>
+        <div class="vip-actions">
+          <button class="btn btn-secondary btn-small vip-edit-btn" type="button" title="Edit user">✏️</button>
+        </div>
+      </div>
+    `).join('');
+    
+    // Setup edit button handlers
+    document.querySelectorAll('.vip-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.target.closest('.vip-user-item');
+        const platform = item.dataset.platform;
+        const name = item.dataset.name;
+        const tokens = parseInt(item.querySelector('.token-count').textContent) || 0;
+        
+        // Fill edit form with username
+        document.getElementById('vipEditPlatform').value = platform;
+        document.getElementById('vipEditUsername').value = name;
+        document.getElementById('vipEditTokens').value = tokens;
+        document.getElementById('vipEditReason').value = '';
+        
+        // Scroll to edit section
+        document.querySelector('.vip-edit-card').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  } catch (e) {
+    console.error('Error loading VIP users:', e);
+    listEl.innerHTML = `
+      <div class="empty-vip">
+        <span class="empty-icon">⚠️</span>
+        <p>Error loading users</p>
+        <p class="empty-hint">Make sure the bot is running</p>
+      </div>
+    `;
+  }
+}
+
+async function setVIPTokens() {
+  const platform = document.getElementById('vipEditPlatform').value;
+  const username = document.getElementById('vipEditUsername').value.trim();
+  const tokens = parseInt(document.getElementById('vipEditTokens').value) || 0;
+  
+  if (!username) {
+    showToast('Please enter a username', 'error');
+    return;
+  }
+  
+  const result = await window.electronAPI.vipSetTokensByUsername(platform, username, tokens);
+  if (result.success) {
+    showToast(`Set ${username}'s tokens to ${tokens}`, 'success');
+    await loadVIPUsers();
+    // Clear form
+    document.getElementById('vipEditUsername').value = '';
+    document.getElementById('vipEditTokens').value = '0';
+  } else {
+    showToast('Failed to set tokens: ' + (result.error || 'Unknown error'), 'error');
+  }
+}
+
+async function awardVIPTokens() {
+  const platform = document.getElementById('vipEditPlatform').value;
+  const username = document.getElementById('vipEditUsername').value.trim();
+  const amount = parseInt(document.getElementById('vipEditTokens').value) || 0;
+  const reason = document.getElementById('vipEditReason').value.trim() || 'Manual award';
+  
+  if (!username) {
+    showToast('Please enter a username', 'error');
+    return;
+  }
+  
+  if (amount <= 0) {
+    showToast('Please enter a positive token amount', 'error');
+    return;
+  }
+  
+  const result = await window.electronAPI.vipAwardTokensByUsername(platform, username, amount, reason);
+  if (result.success) {
+    showToast(`Awarded ${amount} tokens to ${username}`, 'success');
+    await loadVIPUsers();
+    // Clear form
+    document.getElementById('vipEditUsername').value = '';
+    document.getElementById('vipEditTokens').value = '0';
+    document.getElementById('vipEditReason').value = '';
+  } else {
+    showToast('Failed to award tokens: ' + (result.error || 'Unknown error'), 'error');
+  }
+}
+
+function setupVIPHandlers() {
+  // Save rates button
+  document.getElementById('saveRatesBtn')?.addEventListener('click', saveVIPRates);
+  
+  // Search buttons
+  document.getElementById('vipSearchBtn')?.addEventListener('click', () => {
+    const query = document.getElementById('vipSearchInput').value.trim();
+    loadVIPUsers(query);
+  });
+  
+  document.getElementById('vipShowAllBtn')?.addEventListener('click', () => {
+    document.getElementById('vipSearchInput').value = '';
+    loadVIPUsers();
+  });
+  
+  // Search on Enter key
+  document.getElementById('vipSearchInput')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const query = e.target.value.trim();
+      loadVIPUsers(query);
+    }
+  });
+  
+  // Edit user buttons
+  document.getElementById('vipSetTokensBtn')?.addEventListener('click', setVIPTokens);
+  document.getElementById('vipAwardTokensBtn')?.addEventListener('click', awardVIPTokens);
+}
+
+// Start the app
+init();
+

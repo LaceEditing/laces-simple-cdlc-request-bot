@@ -1,0 +1,95 @@
+{
+  "users": {
+    "twitch:1420436387": {
+      "platform": "twitch",
+      "platformUserId": "1420436387",
+      "displayName": "SaveMePleaseOMGHelpAHHH",
+      "tokens": 50,
+      "totalEarned": 52,
+      "lastUpdated": "2026-01-09T05:21:13.925Z",
+      "history": [
+        {
+          "timestamp": "2026-01-09T05:08:34.948Z",
+          "type": "manual",
+          "amount": 2,
+          "description": "Gifted by LaceEditing"
+        },
+        {
+          "timestamp": "2026-01-09T05:14:02.307Z",
+          "type": "spent",
+          "amount": -1,
+          "description": "VIP request"
+        },
+        {
+          "timestamp": "2026-01-09T05:20:58.178Z",
+          "type": "manual",
+          "amount": 50,
+          "description": "Gifted by LaceEditing"
+        },
+        {
+          "timestamp": "2026-01-09T05:21:13.925Z",
+          "type": "spent",
+          "amount": -1,
+          "description": "VIP request"
+        }
+      ]
+    },
+    "twitch:49821289": {
+      "platform": "twitch",
+      "platformUserId": "49821289",
+      "displayName": "LaceEditing",
+      "tokens": 1,
+      "totalEarned": 2,
+      "lastUpdated": "2026-01-09T05:21:36.218Z",
+      "history": [
+        {
+          "timestamp": "2026-01-09T05:14:28.212Z",
+          "type": "manual",
+          "amount": 10000,
+          "description": "Set via GUI"
+        },
+        {
+          "timestamp": "2026-01-09T05:15:04.002Z",
+          "type": "spent",
+          "amount": -1,
+          "description": "VIP request"
+        },
+        {
+          "timestamp": "2026-01-09T05:19:07.011Z",
+          "type": "manual",
+          "amount": -9999,
+          "description": "Set via GUI"
+        },
+        {
+          "timestamp": "2026-01-09T05:19:55.584Z",
+          "type": "subscription",
+          "amount": 1,
+          "description": "Twitch Tier 1 subscription"
+        },
+        {
+          "timestamp": "2026-01-09T05:20:52.466Z",
+          "type": "subscription",
+          "amount": 1,
+          "description": "Twitch Tier 1 subscription"
+        },
+        {
+          "timestamp": "2026-01-09T05:21:36.218Z",
+          "type": "spent",
+          "amount": -1,
+          "description": "VIP request"
+        }
+      ]
+    }
+  },
+  "rates": {
+    "twitchTier1": 1,
+    "twitchTier2": 2,
+    "twitchTier3": 4,
+    "twitchPrime": 1,
+    "twitchBitsAmount": 250,
+    "twitchBitsTokens": 1,
+    "youtubeMember": 1,
+    "youtubeSuperChat": 1,
+    "youtubeSuperChatMinimum": 2.5
+  }
+}

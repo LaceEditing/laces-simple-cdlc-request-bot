@@ -92,7 +92,7 @@ export class QueueManager {
   /**
    * Add a new song request to the queue
    */
-  addRequest(song: SongInfo, userId: string, username: string, platform: 'twitch' | 'youtube'): SongRequest {
+  addRequest(song: SongInfo, userId: string, username: string, platform: 'twitch' | 'youtube', isVIP: boolean = false): SongRequest {
     const request: SongRequest = {
       id: this.generateId(),
       song,
@@ -100,9 +100,18 @@ export class QueueManager {
       platform,
       requestedAt: new Date(),
       status: 'pending',
+      isVIP,
     };
 
-    this.requests.push(request);
+    if (isVIP) {
+      // Insert VIP request at top, but after other VIP requests
+      const lastVIPIndex = this.requests.reduce((lastIdx, req, idx) => {
+        return req.status === 'pending' && req.isVIP ? idx : lastIdx;
+      }, -1);
+      this.requests.splice(lastVIPIndex + 1, 0, request);
+    } else {
+      this.requests.push(request);
+    }
     
     // Update cooldown
     const userKey = `${platform}:${userId}`;
@@ -262,14 +271,16 @@ export class QueueManager {
       return;
     }
 
+    // Work on a copy of the pending array
+    const reordered = [...pending];
     // Remove the item from its original position
-    const [movedItem] = pending.splice(fromIndex, 1);
+    const [movedItem] = reordered.splice(fromIndex, 1);
     // Insert it at the new position
-    pending.splice(toIndex, 0, movedItem);
+    reordered.splice(toIndex, 0, movedItem);
 
-    // Rebuild the full requests array with the new order
+    // Rebuild the full requests array: non-pending items stay, then the reordered pending items
     const nonPending = this.requests.filter(r => r.status !== 'pending');
-    this.requests = [...nonPending, ...pending];
+    this.requests = [...nonPending, ...reordered];
     
     this.saveQueue();
     console.log(`[QueueManager] Reordered queue: moved position ${fromIndex + 1} to ${toIndex + 1}`);

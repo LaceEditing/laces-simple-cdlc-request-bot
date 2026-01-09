@@ -58,6 +58,9 @@ CHAT COMMANDS
   
   -!remove (removes the user's most recent request from the list)
   
+  -!tokens (check your VIP token balance)
+  
+  -!vip (same as !tokens)
 
 
 (MOD ONLY ONES):
@@ -70,3 +73,25 @@ CHAT COMMANDS
   -!skip
   
   -!clear (streamer only, kills entire queue)
+
+------------------------------------
+VIP TOKEN SYSTEM
+------------------------------------
+
+Viewers earn VIP tokens through subscriptions, bits, and donations:
+
+TWITCH:
+  - Prime/Tier 1 Sub: 1 token
+  - Tier 2 Sub: 2 tokens
+  - Tier 3 Sub: 4 tokens
+  - Bits: 1 token per 250 bits (configurable)
+  - Gift subs: tokens go to the gifter
+
+YOUTUBE:
+  - Membership: 1 token
+  - Super Chat: 1 token per $2.50 (configurable)
+  - Gift memberships: tokens go to the gifter
+
+Token rates can be adjusted in the VIP Tokens tab.
+
+Data is stored in: data/vip-tokens.json

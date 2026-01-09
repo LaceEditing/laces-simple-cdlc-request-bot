@@ -1,0 +1,71 @@
+{
+  "users": {
+    "twitch:12345678": {
+      "platform": "twitch",
+      "platformUserId": "12345678",
+      "displayName": "ExampleUser",
+      "tokens": 5,
+      "totalEarned": 7,
+      "lastUpdated": "2026-01-08T10:00:00.000Z",
+      "history": [
+        {
+          "timestamp": "2026-01-01T10:00:00.000Z",
+          "type": "subscription",
+          "amount": 1,
+          "description": "Twitch Tier 1 subscription"
+        },
+        {
+          "timestamp": "2026-01-05T15:30:00.000Z",
+          "type": "bits",
+          "amount": 2,
+          "description": "Cheered 500 bits"
+        },
+        {
+          "timestamp": "2026-01-06T20:00:00.000Z",
+          "type": "subscription",
+          "amount": 4,
+          "description": "Twitch Tier 3 subscription"
+        },
+        {
+          "timestamp": "2026-01-08T10:00:00.000Z",
+          "type": "spent",
+          "amount": -2,
+          "description": "VIP request"
+        }
+      ]
+    },
+    "youtube:UC_example123": {
+      "platform": "youtube",
+      "platformUserId": "UC_example123",
+      "displayName": "YouTubeViewer",
+      "tokens": 3,
+      "totalEarned": 3,
+      "lastUpdated": "2026-01-07T14:00:00.000Z",
+      "history": [
+        {
+          "timestamp": "2026-01-07T14:00:00.000Z",
+          "type": "superchat",
+          "amount": 2,
+          "description": "Super Chat USD$5.00"
+        },
+        {
+          "timestamp": "2026-01-07T14:30:00.000Z",
+          "type": "subscription",
+          "amount": 1,
+          "description": "YouTube membership"
+        }
+      ]
+    }
+  },
+  "rates": {
+    "twitchTier1": 1,
+    "twitchTier2": 2,
+    "twitchTier3": 4,
+    "twitchPrime": 1,
+    "twitchBitsAmount": 250,
+    "twitchBitsTokens": 1,
+    "youtubeMember": 1,
+    "youtubeSuperChat": 1,
+    "youtubeSuperChatMinimum": 2.5
+  }
+}

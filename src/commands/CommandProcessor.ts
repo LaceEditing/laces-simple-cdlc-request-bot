@@ -1,5 +1,5 @@
 import { ChatMessage, CommandContext, CommandHandler, BotConfig } from '../types';
-import { QueueManager, CustomsforgeService } from '../services';
+import { QueueManager, CustomsforgeService, VIPTokenService } from '../services';
 
 export class CommandProcessor {
   private commands: Map<string, CommandHandler> = new Map();
@@ -9,7 +9,8 @@ export class CommandProcessor {
     private queueManager: QueueManager,
     private customsforge: CustomsforgeService,
     private config: BotConfig,
-    private getPublicUrl?: () => string
+    private getPublicUrl?: () => string,
+    private vipTokenService?: VIPTokenService
   ) {
     this.registerCommands();
   }
@@ -18,6 +19,9 @@ export class CommandProcessor {
     // User commands
     this.commands.set('request', this.handleRequest.bind(this));
     this.commands.set('sr', this.handleRequest.bind(this)); // Alias
+    this.commands.set('viprequest', this.handleVIPRequest.bind(this));
+    this.commands.set('vipsr', this.handleVIPRequest.bind(this)); // Alias
+    this.commands.set('vipsong', this.handleVIPRequest.bind(this)); // Alias
     this.commands.set('list', this.handleList.bind(this));
     this.commands.set('queue', this.handleList.bind(this)); // Alias
     this.commands.set('song', this.handleCurrentSong.bind(this));
@@ -25,12 +29,20 @@ export class CommandProcessor {
     this.commands.set('myqueue', this.handleMyQueue.bind(this));
     this.commands.set('remove', this.handleRemove.bind(this));
     this.commands.set('help', this.handleHelp.bind(this));
+    this.commands.set('tokens', this.handleTokens.bind(this));
+    this.commands.set('vip', this.handleTokens.bind(this)); // Alias
 
     // Mod/Broadcaster commands
     this.commands.set('next', this.handleNext.bind(this));
     this.commands.set('played', this.handlePlayed.bind(this));
     this.commands.set('skip', this.handleSkip.bind(this));
     this.commands.set('clear', this.handleClear.bind(this));
+    this.commands.set('givevip', this.handleGiveVIP.bind(this));
+    
+    // Test commands (mod/broadcaster only)
+    this.commands.set('testsub', this.handleTestSub.bind(this));
+    this.commands.set('testbits', this.handleTestBits.bind(this));
+    this.commands.set('testsuperchat', this.handleTestSuperChat.bind(this));
   }
 
   async processMessage(message: ChatMessage, sendReply: (text: string) => Promise<void>): Promise<void> {
@@ -233,6 +245,98 @@ export class CommandProcessor {
     );
   }
 
+  private async handleVIPRequest(ctx: CommandContext): Promise<void> {
+    const { message, args, reply } = ctx;
+    
+    // Check if VIP token service is available
+    if (!this.vipTokenService) {
+      await reply(`@${message.username} VIP requests are not available.`);
+      return;
+    }
+
+    // Check if user has VIP tokens
+    const balance = this.vipTokenService.getBalance(message.platform, message.userId);
+    if (balance < 1) {
+      await reply(`@${message.username} You don't have any VIP tokens! Earn tokens by subscribing, cheering bits, or Super Chatting. Check your balance with !tokens`);
+      return;
+    }
+
+    if (args.length === 0) {
+      await reply('Usage: !viprequest <artist> - <song title> (costs 1 VIP token)');
+      return;
+    }
+
+    // Check if user can make a request (cooldown check)
+    const canRequest = this.queueManager.canUserRequest(message.userId, message.platform);
+    if (!canRequest.allowed) {
+      await reply(`@${message.username} ${canRequest.reason}`);
+      return;
+    }
+
+    const requestText = args.join(' ');
+    const parsed = this.customsforge.parseRequest(requestText);
+
+    const explicit = parsed || { artist: '', title: requestText };
+    const guess = this.guessArtistTitleFromFreeform(requestText);
+
+    const isExplicitFormat = requestText.includes(' - ') || /\s+by\s+/i.test(requestText);
+    const effective = isExplicitFormat ? explicit : guess;
+
+    if (!parsed) {
+      await reply(`@${message.username} Could not parse your request. Try: !viprequest Artist - Song Title`);
+      return;
+    }
+
+    // Search for the song on Customsforge (same logic as regular request)
+    let searchResult;
+    let song: any = null;
+    
+    searchResult = await this.customsforge.searchSong(requestText);
+    
+    if ((!searchResult.found || searchResult.songs.length === 0) && effective.artist) {
+      searchResult = await this.customsforge.searchSong(`${effective.artist} ${effective.title}`);
+    }
+    
+    if ((!searchResult.found || searchResult.songs.length === 0) && effective.title && effective.title !== requestText) {
+      searchResult = await this.customsforge.searchSong(effective.title);
+    }
+
+    if (searchResult.found && searchResult.songs.length > 0) {
+      const scoreArtist = effective.artist;
+      const scoreTitle = effective.title || requestText;
+      song = this.findBestMatch(searchResult.songs, scoreArtist, scoreTitle);
+    } else {
+      song = {
+        artist: effective.artist || 'Unknown Artist',
+        title: effective.title || requestText,
+        album: undefined,
+        customsforgeUrl: undefined,
+      };
+    }
+
+    // Check if song is already in queue
+    if (this.queueManager.isSongInQueue(song.artist, song.title)) {
+      await reply(`@${message.username} "${song.artist} - ${song.title}" is already in the queue!`);
+      return;
+    }
+
+    // Spend the VIP token
+    const spendResult = this.vipTokenService.spendTokens(message.platform, message.userId, 1);
+    if (!spendResult.success) {
+      await reply(`@${message.username} Failed to use VIP token: ${spendResult.error}`);
+      return;
+    }
+
+    // Add to queue as VIP (will be placed at top, after other VIP requests)
+    const request = this.queueManager.addRequest(song, message.userId, message.username, message.platform, true);
+    const position = this.queueManager.getQueuePosition(request.id);
+
+    await reply(
+      `@${message.username} ⭐ VIP Request! Added "${song.artist} - ${song.title}" to position #${position}! ` +
+      `(${spendResult.remainingTokens} VIP token(s) remaining)`
+    );
+  }
+
   private async handleList(ctx: CommandContext): Promise<void> {
     const { message, reply } = ctx;
     // Use public URL if available, otherwise fall back to config
@@ -299,8 +403,8 @@ export class CommandProcessor {
   private async handleHelp(ctx: CommandContext): Promise<void> {
     const { message, reply } = ctx;
     await reply(
-      `@${message.username} Commands: !request <song> - Request a song | !list - View queue | ` +
-      `!song - Current/next song | !myqueue - Your requests | !remove - Remove your last request | !help - Show commands`
+      `@${message.username} Commands: !request <song> | !viprequest <song> (priority, costs 1 token) | !list | ` +
+      `!song | !tokens | !myqueue | !remove`
     );
   }
 
@@ -381,5 +485,204 @@ export class CommandProcessor {
 
     const count = this.queueManager.clearQueue();
     await reply(`Cleared ${count} song(s) from the queue.`);
+  }
+
+  private async handleGiveVIP(ctx: CommandContext): Promise<void> {
+    const { message, args, reply } = ctx;
+    
+    if (!this.isMod(message)) {
+      return;
+    }
+
+    if (!this.vipTokenService) {
+      await reply('VIP token system is not available.');
+      return;
+    }
+
+    if (args.length < 2) {
+      await reply('Usage: !givevip <username> <amount>');
+      return;
+    }
+
+    // Parse username (remove @ if present)
+    const targetUsername = args[0].replace(/^@/, '');
+    const targetUsernameLower = targetUsername.toLowerCase();
+    const amount = parseInt(args[1], 10);
+
+    if (isNaN(amount) || amount <= 0) {
+      await reply('Please specify a valid positive number of tokens.');
+      return;
+    }
+
+    // Search for the user by display name OR platformUserId (case-insensitive)
+    const allUsers = this.vipTokenService.getAllUsers();
+    const existingUser = allUsers.find(
+      u => u.displayName.toLowerCase() === targetUsernameLower ||
+           u.platformUserId.toLowerCase() === targetUsernameLower
+    );
+
+    if (existingUser) {
+      // Award to existing user
+      const user = this.vipTokenService.awardTokens(
+        existingUser.platform,
+        existingUser.platformUserId,
+        existingUser.displayName,
+        amount,
+        'manual',
+        `Gifted by ${message.username}`
+      );
+      await reply(`Gave ${amount} VIP token(s) to ${user.displayName}! They now have ${user.tokens} token(s).`);
+    } else {
+      // Create new user on the same platform as the command issuer
+      const user = this.vipTokenService.awardTokens(
+        message.platform,
+        targetUsername.toLowerCase(), // Use lowercase username as userId placeholder
+        targetUsername,
+        amount,
+        'manual',
+        `Gifted by ${message.username}`
+      );
+      await reply(`Created new user and gave ${amount} VIP token(s) to ${user.displayName}! They now have ${user.tokens} token(s).`);
+    }
+  }
+
+  // ============ Test Commands (Mod/Broadcaster Only) ============
+
+  private async handleTestSub(ctx: CommandContext): Promise<void> {
+    const { message, args, reply } = ctx;
+    
+    if (!this.isMod(message)) {
+      return;
+    }
+
+    if (!this.vipTokenService) {
+      await reply('VIP token system is not available.');
+      return;
+    }
+
+    // Parse tier: prime, 1, 2, 3 (default: 1)
+    const tierArg = args[0]?.toLowerCase() || '1';
+    let tier: 'Prime' | '1000' | '2000' | '3000';
+    let tierName: string;
+    
+    switch (tierArg) {
+      case 'prime':
+        tier = 'Prime';
+        tierName = 'Prime';
+        break;
+      case '2':
+        tier = '2000';
+        tierName = 'Tier 2';
+        break;
+      case '3':
+        tier = '3000';
+        tierName = 'Tier 3';
+        break;
+      default:
+        tier = '1000';
+        tierName = 'Tier 1';
+    }
+
+    const user = this.vipTokenService.handleTwitchSubscription(
+      message.userId,
+      message.username,
+      tier
+    );
+
+    await reply(`🧪 TEST: Simulated ${tierName} subscription for @${message.username}! They now have ${user.tokens} token(s).`);
+  }
+
+  private async handleTestBits(ctx: CommandContext): Promise<void> {
+    const { message, args, reply } = ctx;
+    
+    if (!this.isMod(message)) {
+      return;
+    }
+
+    if (!this.vipTokenService) {
+      await reply('VIP token system is not available.');
+      return;
+    }
+
+    const bits = parseInt(args[0], 10) || 250;
+    
+    if (bits <= 0) {
+      await reply('Please specify a positive number of bits.');
+      return;
+    }
+
+    const user = this.vipTokenService.handleTwitchBits(
+      message.userId,
+      message.username,
+      bits
+    );
+
+    if (!user) {
+      await reply(`🧪 TEST: Simulated ${bits} bits but no tokens earned (below minimum).`);
+      return;
+    }
+
+    const rates = this.vipTokenService.getRates();
+    const tokensEarned = Math.floor(bits / rates.twitchBitsAmount) * rates.twitchBitsTokens;
+    
+    await reply(`🧪 TEST: Simulated ${bits} bits from @${message.username}! Earned ${tokensEarned} token(s), now has ${user.tokens} total.`);
+  }
+
+  private async handleTestSuperChat(ctx: CommandContext): Promise<void> {
+    const { message, args, reply } = ctx;
+    
+    if (!this.isMod(message)) {
+      return;
+    }
+
+    if (!this.vipTokenService) {
+      await reply('VIP token system is not available.');
+      return;
+    }
+
+    // Amount in dollars (default: $5)
+    const amount = parseFloat(args[0]) || 5.00;
+    
+    if (amount <= 0) {
+      await reply('Please specify a positive dollar amount.');
+      return;
+    }
+
+    const user = this.vipTokenService.handleYouTubeSuperChat(
+      message.userId,
+      message.username,
+      amount,
+      'USD'
+    );
+
+    if (!user) {
+      await reply(`🧪 TEST: Simulated $${amount.toFixed(2)} Super Chat but no tokens earned (below minimum).`);
+      return;
+    }
+
+    const rates = this.vipTokenService.getRates();
+    const tokensEarned = Math.floor(amount / rates.youtubeSuperChatMinimum) * rates.youtubeSuperChat;
+    
+    await reply(`🧪 TEST: Simulated $${amount.toFixed(2)} Super Chat from @${message.username}! Earned ${tokensEarned} token(s), now has ${user.tokens} total.`);
+  }
+
+  // ============ VIP Token Commands ============
+
+  private async handleTokens(ctx: CommandContext): Promise<void> {
+    const { message, reply } = ctx;
+    
+    if (!this.vipTokenService) {
+      await reply('VIP token system is not available.');
+      return;
+    }
+
+    // Ensure user is registered in the system (so !givevip can find them by displayName)
+    const user = this.vipTokenService.ensureUser(message.platform, message.userId, message.username);
+    
+    if (user.totalEarned > 0) {
+      await reply(`@${message.username} you have ${user.tokens} VIP token(s) (total earned: ${user.totalEarned})`);
+    } else {
+      await reply(`@${message.username} you have ${user.tokens} VIP token(s). Earn tokens by subscribing, gifting subs, cheering bits, or Super Chatting!`);
+    }
   }
 }

@@ -223,6 +223,38 @@ export class WebServer {
       background: #ff0000;
     }
     
+    /* VIP Request Styling */
+    .queue-item.vip-request {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 193, 7, 0.15) 100%);
+      border: 2px solid rgba(255, 215, 0, 0.5);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    }
+    
+    .queue-item.vip-request:hover {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.35) 0%, rgba(255, 193, 7, 0.25) 100%);
+    }
+    
+    .queue-item.vip-request .queue-position {
+      background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+      color: #4a3800;
+    }
+    
+    .queue-item.vip-request .title {
+      color: #ffd700;
+    }
+    
+    .vip-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+      color: #4a3800;
+      font-weight: 700;
+      font-size: 0.75em;
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+    
     .empty-queue {
       text-align: center;
       padding: 50px;
@@ -295,10 +327,10 @@ export class WebServer {
       ${pending.length > 0 ? `
       <ul class="queue-list">
         ${pending.map((item, index) => `
-        <li class="queue-item">
+        <li class="queue-item${item.isVIP ? ' vip-request' : ''}">
           <div class="queue-position">${index + 1}</div>
           <div class="queue-song">
-            <div class="title">${this.escapeHtml(item.song.title)}</div>
+            <div class="title">${this.escapeHtml(item.song.title)}${item.isVIP ? '<span class="vip-badge">⭐ VIP</span>' : ''}</div>
             <div class="artist">${this.escapeHtml(item.song.artist)}</div>
           </div>
           <div class="queue-meta">
@@ -320,6 +352,8 @@ export class WebServer {
       <h3>📝 Commands</h3>
       <ul>
         <li><code>!request Artist - Song</code> - Request a song from Customsforge</li>
+        <li><code>!viprequest Artist - Song</code> - VIP request (costs 1 token, priority queue)</li>
+        <li><code>!tokens</code> - Check your VIP token balance</li>
         <li><code>!list</code> - Get a link to this queue page</li>
         <li><code>!song</code> - See what's currently playing</li>
         <li><code>!myqueue</code> - See your position in the queue</li>

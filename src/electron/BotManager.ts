@@ -1,5 +1,5 @@
 import { TwitchClient, YouTubeClient } from '../clients';
-import { QueueManager, CustomsforgeService } from '../services';
+import { QueueManager, CustomsforgeService, VIPTokenService, VIPUser, VIPTokenRates } from '../services';
 import { CommandProcessor } from '../commands';
 import { WebServer } from '../web';
 import { ChatClient, ChatMessage, BotConfig } from '../types';
@@ -60,6 +60,7 @@ export class BotManager {
   private youtubeClient: YouTubeClient | null = null;
   private queueManager: QueueManager;
   private customsforge: CustomsforgeService;
+  private vipTokenService: VIPTokenService;
   private commandProcessor: CommandProcessor;
   private webServer: WebServer;
   private isRunning: boolean = false;
@@ -77,11 +78,13 @@ export class BotManager {
       settings.customsforge.username,
       settings.customsforge.password
     );
+    this.vipTokenService = new VIPTokenService();
     this.commandProcessor = new CommandProcessor(
       this.queueManager,
       this.customsforge,
       config,
-      () => this.tunnelUrl || `http://localhost:${settings.web.port}`
+      () => this.tunnelUrl || `http://localhost:${settings.web.port}`,
+      this.vipTokenService
     );
     this.webServer = new WebServer(this.queueManager, config);
     this.urls.local = `http://localhost:${settings.web.port}`;
@@ -151,6 +154,7 @@ export class BotManager {
           console.log(`[Twitch] Attempting to connect as ${twitchConfig.username} to #${twitchConfig.channel}...`);
           this.twitchClient = new TwitchClient(twitchConfig);
           this.setupChatHandler(this.twitchClient);
+          this.setupTwitchVIPHandlers(this.twitchClient);
           await this.twitchClient.connect();
           console.log('[Twitch] Successfully connected!');
         } catch (error: any) {
@@ -168,6 +172,7 @@ export class BotManager {
           console.log('[YouTube] Attempting to connect...');
           this.youtubeClient = new YouTubeClient(ytConfig);
           this.setupChatHandler(this.youtubeClient);
+          this.setupYouTubeVIPHandlers(this.youtubeClient);
           await this.youtubeClient.connect();
           // Only log success if client actually connected (has liveChatId)
           if (this.youtubeClient.isActive()) {
@@ -301,5 +306,151 @@ export class BotManager {
     } else {
       return { success: false, message: 'Login failed - check username and password' };
     }
+  }
+
+  // ============================================
+  // VIP Token System Handlers
+  // ============================================
+
+  private setupTwitchVIPHandlers(client: TwitchClient): void {
+    // Handle subscriptions
+    client.onSubscription((event) => {
+      this.vipTokenService.handleTwitchSubscription(
+        event.userId,
+        event.displayName,
+        event.tier,
+        event.months
+      );
+    });
+
+    // Handle bits
+    client.onBits((event) => {
+      this.vipTokenService.handleTwitchBits(
+        event.userId,
+        event.displayName,
+        event.bits
+      );
+    });
+  }
+
+  private setupYouTubeVIPHandlers(client: YouTubeClient): void {
+    // Handle memberships
+    client.onMembership((event) => {
+      this.vipTokenService.handleYouTubeMembership(
+        event.channelId,
+        event.displayName,
+        event.levelName
+      );
+    });
+
+    // Handle Super Chats
+    client.onSuperChat((event) => {
+      this.vipTokenService.handleYouTubeSuperChat(
+        event.channelId,
+        event.displayName,
+        event.amountMicros,
+        event.currency
+      );
+    });
+  }
+
+  // ============================================
+  // VIP Token Public Methods
+  // ============================================
+
+  /**
+   * Get all VIP users
+   */
+  getVIPUsers(): VIPUser[] {
+    return this.vipTokenService.getAllUsers();
+  }
+
+  /**
+   * Search VIP users by name
+   */
+  searchVIPUsers(query: string): VIPUser[] {
+    return this.vipTokenService.searchUsers(query);
+  }
+
+  /**
+   * Get a specific user's VIP info
+   */
+  getVIPUser(platform: 'twitch' | 'youtube', platformUserId: string): VIPUser | null {
+    return this.vipTokenService.getUser(platform, platformUserId);
+  }
+
+  /**
+   * Get a user's token balance
+   */
+  getVIPBalance(platform: 'twitch' | 'youtube', platformUserId: string): number {
+    return this.vipTokenService.getBalance(platform, platformUserId);
+  }
+
+  /**
+   * Manually set a user's tokens
+   */
+  setVIPUserTokens(
+    platform: 'twitch' | 'youtube',
+    platformUserId: string,
+    displayName: string,
+    tokens: number
+  ): VIPUser {
+    return this.vipTokenService.setUserTokens(platform, platformUserId, displayName, tokens);
+  }
+
+  /**
+   * Award tokens to a user
+   */
+  awardVIPTokens(
+    platform: 'twitch' | 'youtube',
+    platformUserId: string,
+    displayName: string,
+    amount: number,
+    description: string
+  ): VIPUser {
+    return this.vipTokenService.awardTokens(
+      platform,
+      platformUserId,
+      displayName,
+      amount,
+      'manual',
+      description
+    );
+  }
+
+  /**
+   * Award tokens by username (GUI-friendly)
+   */
+  awardVIPTokensByUsername(
+    platform: 'twitch' | 'youtube',
+    username: string,
+    amount: number,
+    description: string
+  ): VIPUser {
+    return this.vipTokenService.awardTokensByUsername(platform, username, amount, description);
+  }
+
+  /**
+   * Set tokens by username (GUI-friendly)
+   */
+  setVIPTokensByUsername(
+    platform: 'twitch' | 'youtube',
+    username: string,
+    tokens: number
+  ): VIPUser {
+    return this.vipTokenService.setTokensByUsername(platform, username, tokens);
+  }
+  /**
+   * Get VIP token rates
+   */
+  getVIPRates(): VIPTokenRates {
+    return this.vipTokenService.getRates();
+  }
+
+  /**
+   * Update VIP token rates
+   */
+  setVIPRates(rates: Partial<VIPTokenRates>): void {
+    this.vipTokenService.setRates(rates);
   }
 }
